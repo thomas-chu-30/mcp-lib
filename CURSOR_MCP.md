@@ -1,24 +1,40 @@
-# 在 Cursor 使用 Outline Reader MCP
+# 在 Cursor 使用本專案的 MCP
 
-## 已完成的設定
+本專案可放置多個 MCP 伺服器，目前結構如下：
 
-已在 **全域** MCP 設定加入 `outline-reader` 伺服器：
+| 目錄 | 說明 |
+|------|------|
+| `outline/` | Outline Reader MCP：讀取與搜尋 Outline wiki 文件 |
+| `hacker-news/` | Hacker News MCP：抓取 HN 熱門前 10 則並翻譯成中文 |
+
+之後若要新增其它 MCP，可在專案根目錄建立新資料夾（例如 `another-mcp/`），各自擁有 `package.json` 或 Python 進入點即可。
+
+---
+
+## Outline Reader MCP（`outline/`）
+
+### 已完成的設定
+
+已在 **全域** MCP 設定加入 `outline-reader` 伺服器時，請指向 **outline 目錄**：
 
 - 設定檔位置：`~/.cursor/mcp.json`
-- 啟動方式：在專案目錄執行 `node index.js`（使用絕對路徑以確保任何工作區都能連到）
+- 啟動方式：在專案目錄執行時，需切到 `outline` 再啟動，例如：
+  ```bash
+  cd /Users/chu-cheng-yang/cases/mcp/outline && node index.js
+  ```
 
-## 使用前請先
+### 使用前請先
 
-1. **Build 專案**（若尚未 build）  
+1. **Build Outline MCP**（若尚未 build）  
    ```bash
-   npm run build
+   cd outline && npm install && npm run build
    ```
 
 2. **重啟 Cursor 或重新載入 MCP**  
    - 關閉再開啟 Cursor，或  
    - 到 **Cursor Settings → Features → MCP**，對 MCP 清單按重新整理
 
-## 如何測試
+### 如何測試
 
 1. 在 Cursor 裡開啟 **Composer**（Cmd+I 或 Ctrl+I）或 **Chat**。
 2. 在對話中輸入例如：
@@ -26,24 +42,24 @@
    - 「請用 get_outline_document 讀取文件 ID：某個-uuid」
 3. 若 MCP 連線正常，AI 會使用 `search_outline` 或 `get_outline_document` 工具並回傳結果。
 
-## 可用的 MCP 工具
+### 可用的 MCP 工具
 
 | 工具名稱 | 說明 |
 |----------|------|
 | `get_outline_document` | 用文件 ID 取得 Outline 文件內容（Markdown） |
 | `search_outline` | 在 Outline 內搜尋文件關鍵字 |
 
-## 環境變數（可選）
+### 環境變數（可選）
 
 - `OUTLINE_API_KEY`：Outline API 金鑰（未設則用程式內預設）
 - `OUTLINE_BASE_URL`：Outline 伺服器網址（未設則用程式內預設）
 
-在 `~/.cursor/mcp.json` 的 `outline-reader` 裡可加 `env`，例如：
+在 `~/.cursor/mcp.json` 的 `outline-reader` 裡可加 `env`，並將 `args` 改為指向 **outline** 目錄，例如：
 
 ```json
 "outline-reader": {
   "command": "sh",
-  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp && node index.js"],
+  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp/outline && node index.js"],
   "env": {
     "OUTLINE_API_KEY": "你的金鑰",
     "OUTLINE_BASE_URL": "https://你的-outline 網址"
@@ -51,8 +67,67 @@
 }
 ```
 
-## 若工具沒出現
+### 若工具沒出現
 
 - 到 **Cursor Settings → Features → MCP** 確認 `outline-reader` 有出現且為啟用。
 - 檢查該伺服器是否有錯誤訊息（例如路徑錯誤、`node` 找不到）。
-- 確認已在此目錄執行過 `npm install` 與 `npm run build`。
+- 確認已在 **outline** 目錄執行過 `npm install` 與 `npm run build`。
+
+---
+
+## Hacker News MCP（`hacker-news/`）
+
+### 功能說明
+
+從 [Hacker News](https://news.ycombinator.com/) 抓取熱門內容，整理出前 10 則重要項目，並將標題翻譯成繁體中文。使用 HN 官方 Firebase API，無需 API key。
+
+### 已完成的設定
+
+在 **全域** MCP 設定加入 `hacker-news` 伺服器時，請指向 **hacker-news** 目錄並使用該目錄的 Python 虛擬環境：
+
+- 設定檔位置：`~/.cursor/mcp.json`
+- 啟動方式範例（請將路徑改為你的專案絕對路徑）：
+  ```bash
+  cd /Users/chu-cheng-yang/cases/mcp/hacker-news && .venv/bin/python main.py
+  ```
+
+### 使用前請先
+
+1. **建立虛擬環境並安裝依賴**
+   ```bash
+   cd hacker-news && python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+   ```
+
+2. **重啟 Cursor 或重新載入 MCP**  
+   - 到 **Cursor Settings → Features → MCP** 對 MCP 清單按重新整理
+
+### 如何測試
+
+1. 在 Cursor 裡開啟 **Composer** 或 **Chat**。
+2. 在對話中輸入例如：
+   - 「用 hacker-news 抓一下今天 HN 前 10 則並翻譯成中文」
+   - 「請呼叫 get_hacker_news_top10 取得 Hacker News 熱門」
+3. 若 MCP 連線正常，AI 會使用 `get_hacker_news_top10` 工具並回傳已翻譯的精選列表。
+
+### 可用的 MCP 工具
+
+| 工具名稱 | 說明 |
+|----------|------|
+| `get_hacker_news_top10` | 抓取 HN 熱門前 10 則，標題翻譯成繁體中文後回傳（Markdown） |
+
+### `~/.cursor/mcp.json` 範例
+
+```json
+"hacker-news": {
+  "command": "sh",
+  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp/hacker-news && .venv/bin/python main.py"]
+}
+```
+
+（無需環境變數或 API key；翻譯使用 Google 翻譯，需網路連線。）
+
+### 若工具沒出現
+
+- 到 **Cursor Settings → Features → MCP** 確認 `hacker-news` 有出現且為啟用。
+- 確認 `args` 中的路徑為你的專案絕對路徑，且 `hacker-news/.venv` 已建立並安裝過 `requirements.txt`。
+- 若翻譯失敗，工具仍會回傳英文標題。

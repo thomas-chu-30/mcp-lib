@@ -1,1 +1,4 @@
 node_modules
+outline/node_modules
+.venv
+hacker-news/.venv

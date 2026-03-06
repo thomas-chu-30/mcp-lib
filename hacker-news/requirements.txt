@@ -1,0 +1,6 @@
+# MCP Python SDK（預設 stdio，供 Cursor 呼叫）
+mcp[cli]>=1.0.0
+
+# HTTP 請求與翻譯（HN API、Google 翻譯）
+httpx>=0.27.0
+deep-translator>=1.11.0
