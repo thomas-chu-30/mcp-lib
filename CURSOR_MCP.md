@@ -5,7 +5,7 @@
 | 目錄 | 說明 |
 |------|------|
 | `outline/` | Outline Reader MCP：讀取與搜尋 Outline wiki 文件 |
-| `hacker-news/` | Hacker News MCP：抓取 HN 熱門前 10 則並翻譯成中文 |
+| `hacker-news/` | Hacker News MCP：抓取 HN 熱門前 10 則（AI/科技，以 Algolia 搜尋）並翻譯成中文 |
 
 之後若要新增其它 MCP，可在專案根目錄建立新資料夾（例如 `another-mcp/`），各自擁有 `package.json` 或 Python 進入點即可。
 
@@ -79,7 +79,7 @@
 
 ### 功能說明
 
-從 [Hacker News](https://news.ycombinator.com/) 抓取熱門內容，整理出前 10 則重要項目，並將標題翻譯成繁體中文。使用 HN 官方 Firebase API，無需 API key。
+從 [Hacker News](https://news.ycombinator.com/) 抓取 AI 與科技相關熱門內容（以 [Algolia API](https://hn.algolia.com/) 搜尋），回傳前 10 則並將標題翻譯成繁體中文。不需 API key；Algolia 失敗時會改以 Firebase API 備援。
 
 ### 已完成的設定
 
@@ -113,7 +113,7 @@
 
 | 工具名稱 | 說明 |
 |----------|------|
-| `get_hacker_news_top10` | 抓取 HN 熱門前 10 則，標題翻譯成繁體中文後回傳（Markdown） |
+| `get_hacker_news_top10` | 抓取 HN 熱門前 10 則（AI/科技，以 Algolia 搜尋），標題翻譯成繁體中文後回傳（Markdown） |
 
 ### `~/.cursor/mcp.json` 範例
 
@@ -124,7 +124,23 @@
 }
 ```
 
-（無需環境變數或 API key；翻譯使用 Google 翻譯，需網路連線。）
+若要自訂筆數，可加上 `env`，例如回傳 20 則：
+
+```json
+"hacker-news": {
+  "command": "sh",
+  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp/hacker-news && .venv/bin/python main.py"],
+  "env": { "HN_TOP_COUNT": "20" }
+}
+```
+
+### 環境變數（可選）
+
+| 變數 | 說明 | 預設 |
+|------|------|------|
+| `HN_TOP_COUNT` | 回傳的熱門筆數（1～50） | `10` |
+
+（無需 API key；翻譯使用 Google 翻譯，需網路連線。）
 
 ### 若工具沒出現
 
