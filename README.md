@@ -6,6 +6,7 @@
 |------|------|
 | `outline/` | Outline Reader MCP：讀取與搜尋 Outline wiki 文件 |
 | `hacker-news/` | Hacker News MCP：抓取 HN 熱門（AI/科技，以 Algolia 搜尋，預設 20 則）並翻譯成中文；另可取得過去一週精選 |
+| `redmine/` | Redmine MCP：讀取 / 建立 / 更新 Redmine 上的任務（issue），使用個人 API Token 驗證 |
 
 之後若要新增其它 MCP，可在專案根目錄建立新資料夾（例如 `another-mcp/`），各自擁有 `package.json` 或 Python 進入點即可。
 
@@ -149,3 +150,53 @@
 - 到 **Cursor Settings → Features → MCP** 確認 `hacker-news` 有出現且為啟用。
 - 確認 `args` 中的路徑為你的專案絕對路徑，且 `hacker-news/.venv` 已建立並安裝過 `requirements.txt`。
 - 若翻譯失敗，工具仍會回傳英文標題。
+
+---
+
+## Redmine MCP（`redmine/`）
+
+### 功能說明
+
+串接 `https://redmine.thortron.dev/` 等 Redmine 服務，透過 REST API：
+
+- 讀取指派給自己的任務（issue）
+- 建立新的 issue
+- 更新既有 issue 的狀態 / 備註 / 標題 / 優先權
+
+### 安裝與啟動
+
+```bash
+cd redmine
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### `~/.cursor/mcp.json` 範例
+
+```json
+"redmine": {
+  "command": "sh",
+  "args": [
+    "-c",
+    "cd /Users/chu-cheng-yang/cases/mcp/redmine && .venv/bin/python main.py"
+  ],
+  "env": {
+    "REDMINE_BASE_URL": "{{PROJECT_BASE_URL}}",
+    "REDMINE_API_TOKEN": "{{PROJECT_API_TOKEN}}",
+    "REDMINE_PROJECT_IDS": "{{PROJECT_PROJECT_IDS}}",
+    "REDMINE_SELF_NAME": "{{PROJECT_SELF_NAME}}"
+  }
+}
+```
+
+### 主要工具
+
+- `get_my_issues(limit: int = 20, include_closed: bool = False)`  
+  取得指派給目前 API token 使用者的 issue 列表。
+
+- `create_issue(project_identifier: str, subject: str, description: str | None = None, tracker_id: int | None = None, status_id: int | None = None, priority_id: int | None = None)`  
+  在指定專案底下建立新 issue。
+
+- `update_issue(issue_id: int, status_id: int | None = None, notes: str | None = None, subject: str | None = None, priority_id: int | None = None)`  
+  更新既有 issue 的狀態 / 備註 / 標題 / 優先權。
