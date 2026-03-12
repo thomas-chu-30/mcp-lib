@@ -395,20 +395,21 @@ def create_issue(
     project_identifier: str,
     subject: str,
     description: str | None = None,
-    tracker_id: int | None = None,
-    status_id: int | None = None,
+    tracker_id: int = 2,
+    status_id: int = 1,
     priority_id: int | None = None,
 ) -> str:
     """
     在 Redmine 建立一個新的 issue（task）。
+    請求格式與 Redmine REST API 一致：POST /issues.json，body 為 {"issue": {...}}。
 
     參數：
-    - project_identifier：專案識別碼（如 `my-project`），對應 Redmine 的 `identifier`
+    - project_identifier：專案識別碼（如 `ss`），對應 Redmine 的 project identifier
     - subject：標題
     - description：描述（可選）
-    - tracker_id：tracker ID（例如 1: Bug, 2: Feature, 3: Support，依實際系統設定）
-    - status_id：初始狀態 ID
-    - priority_id：優先權 ID
+    - tracker_id：tracker ID（預設 2，常見為 Feature；1: Bug, 2: Feature, 3: Support）
+    - status_id：初始狀態 ID（預設 1，常見為 New/新建）
+    - priority_id：優先權 ID（可選）
     """
     if not project_identifier.strip():
         return "project_identifier 不可為空。"
@@ -417,22 +418,19 @@ def create_issue(
 
     try:
         config = RedmineConfig.from_env()
-        payload: dict[str, Any] = {
-            "issue": {
-                "project_id": project_identifier,
-                "subject": subject.strip(),
-            }
+        # 與 Redmine REST API 一致：僅包含 issue 物件，必要欄位 + 選填欄位
+        issue_body: dict[str, Any] = {
+            "project_id": project_identifier.strip(),
+            "subject": subject.strip(),
+            "tracker_id": tracker_id,
+            "status_id": status_id,
         }
-        issue_body = payload["issue"]
-
-        if description:
+        if description is not None and description.strip():
             issue_body["description"] = description.strip()
-        if tracker_id is not None:
-            issue_body["tracker_id"] = tracker_id
-        if status_id is not None:
-            issue_body["status_id"] = status_id
         if priority_id is not None:
             issue_body["priority_id"] = priority_id
+
+        payload: dict[str, Any] = {"issue": issue_body}
 
         with _build_client(config) as client:
             response = _request_with_retry(
