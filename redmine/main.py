@@ -37,6 +37,10 @@ ENV_BASE_URL = "REDMINE_BASE_URL"
 ENV_API_TOKEN = "REDMINE_API_TOKEN"
 ENV_PROJECT_IDS = "REDMINE_PROJECT_IDS"
 ENV_SELF_NAME = "REDMINE_SELF_NAME"
+ENV_SELF_ID = "REDMINE_SELF_ID"
+
+# 未設定環境變數時，建立 issue 預設指派給此名稱（可改為你的 Redmine 顯示名稱）
+_DEFAULT_ASSIGNEE_NAME = "Thomas Chu"
 
 
 mcp = FastMCP("redmine")
@@ -52,6 +56,7 @@ class RedmineConfig:
     api_token: str
     project_ids: list[str]
     self_name: str | None
+    self_id: int | None
 
     @classmethod
     def from_env(cls) -> "RedmineConfig":
@@ -59,6 +64,15 @@ class RedmineConfig:
         api_token = os.environ.get(ENV_API_TOKEN, "").strip()
         raw_project_ids = os.environ.get(ENV_PROJECT_IDS, "")
         self_name = os.environ.get(ENV_SELF_NAME, "").strip() or None
+        self_id: int | None = None
+        raw_self_id = os.environ.get(ENV_SELF_ID, "").strip()
+        if raw_self_id:
+            try:
+                self_id = int(raw_self_id)
+                if self_id <= 0:
+                    self_id = None
+            except ValueError:
+                pass
 
         project_ids: list[str] = []
         if raw_project_ids:
@@ -82,6 +96,7 @@ class RedmineConfig:
             api_token=api_token,
             project_ids=project_ids,
             self_name=self_name,
+            self_id=self_id,
         )
 
 
@@ -433,6 +448,16 @@ def create_issue(
         payload: dict[str, Any] = {"issue": issue_body}
 
         with _build_client(config) as client:
+            # 建立時預設指派：優先 REDMINE_SELF_ID → REDMINE_SELF_NAME → 程式預設 _DEFAULT_ASSIGNEE_NAME
+            assignee_id: int | None = config.self_id
+            if assignee_id is None:
+                assignee_name = config.self_name or _DEFAULT_ASSIGNEE_NAME
+                assignee = _find_user_by_name(client, assignee_name, limit=1)
+                if assignee and isinstance(assignee.get("id"), int):
+                    assignee_id = assignee["id"]
+            if assignee_id is not None:
+                issue_body["assigned_to_id"] = assignee_id
+
             response = _request_with_retry(
                 client,
                 "POST",
