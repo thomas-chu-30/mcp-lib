@@ -1,6 +1,6 @@
 # 在 Cursor 使用本專案的 MCP
 
-本專案可放置多個 MCP 伺服器，目前結構如下：
+本專案可放置多個 MCP 伺服器，方便在 Cursor 內呼叫不同外部服務。
 
 | 目錄 | 說明 |
 |------|------|
@@ -12,6 +12,27 @@
 
 ---
 
+## 快速開始
+
+1. **選擇要啟用的 MCP**
+   - `outline/`：讀取 / 搜尋 Outline 文件。
+   - `hacker-news/`：取得 Hacker News AI / 科技熱門與過去一週精選。
+   - `redmine/`：讀取 / 建立 / 更新 Redmine issue。
+
+2. **在各子目錄內完成安裝步驟**
+   - 依各節「安裝與啟動」或「使用前請先」完成 `npm install` / `pip install` 等準備。
+
+3. **設定 `~/.cursor/mcp.json`**
+   - 參考各 MCP 範例，將路徑改為你自己機器上的專案絕對路徑（例如 `/ABSOLUTE/PATH/TO/mcp/...`）。
+
+4. **在 Cursor 內測試**
+   - 在 Chat / Composer 中直接下指令，例如：
+     - 「用 outline-reader 搜尋關鍵字 XXX」
+     - 「用 hacker-news 抓一下今天 HN 熱門並翻譯成中文」
+     - 「用 redmine 幫我列出指派給我的 issue」
+
+---
+
 ## Outline Reader MCP（`outline/`）
 
 ### 已完成的設定
@@ -19,9 +40,9 @@
 已在 **全域** MCP 設定加入 `outline-reader` 伺服器時，請指向 **outline 目錄**：
 
 - 設定檔位置：`~/.cursor/mcp.json`
-- 啟動方式：在專案目錄執行時，需切到 `outline` 再啟動，例如：
+- 啟動方式：在專案目錄執行時，需切到 `outline` 再啟動，例如（請將路徑改為你本機的專案絕對路徑）：
   ```bash
-  cd /Users/chu-cheng-yang/cases/mcp/outline && node index.js
+  cd /ABSOLUTE/PATH/TO/mcp/outline && node index.js
   ```
 
 ### 使用前請先
@@ -55,12 +76,12 @@
 - `OUTLINE_API_KEY`：**必填**。Outline API 金鑰（於 Outline 設定 → API Keys 建立）；未設則啟動時會報錯並退出。
 - `OUTLINE_BASE_URL`：Outline 伺服器網址（未設則需在程式內或設定檔指定）
 
-在 `~/.cursor/mcp.json` 的 `outline-reader` 裡可加 `env`，並將 `args` 改為指向 **outline** 目錄，例如：
+在 `~/.cursor/mcp.json` 的 `outline-reader` 裡可加 `env`，並將 `args` 改為指向 **outline** 目錄，例如（請將路徑改為你本機的專案絕對路徑）：
 
 ```json
 "outline-reader": {
   "command": "sh",
-  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp/outline && node index.js"],
+  "args": ["-c", "cd /ABSOLUTE/PATH/TO/mcp/outline && node index.js"],
   "env": {
     "OUTLINE_API_KEY": "你的金鑰",
     "OUTLINE_BASE_URL": "https://你的-outline 網址"
@@ -87,9 +108,9 @@
 在 **全域** MCP 設定加入 `hacker-news` 伺服器時，請指向 **hacker-news** 目錄並使用該目錄的 Python 虛擬環境：
 
 - 設定檔位置：`~/.cursor/mcp.json`
-- 啟動方式範例（請將路徑改為你的專案絕對路徑）：
+- 啟動方式範例（請將路徑改為你本機的專案絕對路徑）：
   ```bash
-  cd /Users/chu-cheng-yang/cases/mcp/hacker-news && .venv/bin/python main.py
+  cd /ABSOLUTE/PATH/TO/mcp/hacker-news && .venv/bin/python main.py
   ```
 
 ### 使用前請先
@@ -123,7 +144,7 @@
 ```json
 "hacker-news": {
   "command": "sh",
-  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp/hacker-news && .venv/bin/python main.py"]
+  "args": ["-c", "cd /ABSOLUTE/PATH/TO/mcp/hacker-news && .venv/bin/python main.py"]
 }
 ```
 
@@ -132,7 +153,7 @@
 ```json
 "hacker-news": {
   "command": "sh",
-  "args": ["-c", "cd /Users/chu-cheng-yang/cases/mcp/hacker-news && .venv/bin/python main.py"],
+  "args": ["-c", "cd /ABSOLUTE/PATH/TO/mcp/hacker-news && .venv/bin/python main.py"],
   "env": { "HN_TOP_COUNT": "30" }
 }
 ```
@@ -179,7 +200,7 @@ pip install -r requirements.txt
   "command": "sh",
   "args": [
     "-c",
-    "cd /Users/chu-cheng-yang/cases/mcp/redmine && .venv/bin/python main.py"
+    "cd /ABSOLUTE/PATH/TO/mcp/redmine && .venv/bin/python main.py"
   ],
   "env": {
     "REDMINE_BASE_URL": "{{PROJECT_BASE_URL}}",
@@ -200,3 +221,26 @@ pip install -r requirements.txt
 
 - `update_issue(issue_id: int, status_id: int | None = None, notes: str | None = None, subject: str | None = None, priority_id: int | None = None)`  
   更新既有 issue 的狀態 / 備註 / 標題 / 優先權。
+
+---
+
+## 新增其他 MCP 伺服器
+
+1. **建立子目錄**
+   - 在專案根目錄下建立新資料夾，例如 `my-mcp/`。
+
+2. **建立對應執行入口**
+   - Node.js：建立 `package.json` 與 `index.js` / `dist/index.js` 作為進入點。
+   - Python：建立 `main.py`，建議搭配虛擬環境與 `requirements.txt`。
+
+3. **在 `~/.cursor/mcp.json` 新增設定**
+   - 以此專案其他 MCP 為範本，將 `command` / `args` 指向該目錄與進入點：
+   ```json
+   "my-mcp": {
+     "command": "sh",
+     "args": ["-c", "cd /ABSOLUTE/PATH/TO/mcp/my-mcp && <your-command>"]
+   }
+   ```
+
+4. **重新載入 MCP**
+   - 在 Cursor 中到 **Settings → Features → MCP** 重新整理，或重啟 Cursor，即可在 Chat 中呼叫新 MCP 的工具。
