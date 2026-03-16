@@ -13,12 +13,22 @@ from http_client import request_with_retry
 
 
 @mcp.tool()
-def get_my_issues(limit: int = 20, include_closed: bool = False) -> str:
+def get_my_issues(
+    limit: int = 20,
+    include_closed: bool = False,
+    updated_from: str | None = None,
+    updated_to: str | None = None,
+) -> str:
     """
     取得指派給目前 API token 使用者的 Redmine 任務列表。
 
     - limit：最多回傳幾筆（預設 20，1～100）
     - include_closed：是否包含已關閉的任務（預設 False，只顯示未關閉）
+    - updated_from：只顯示「更新時間」大於等於此日期（YYYY-MM-DD）
+    - updated_to：只顯示「更新時間」小於等於此日期（YYYY-MM-DD）
+
+    若同時提供 updated_from 與 updated_to，則會以區間方式篩選
+    （大致對應 Redmine 查詢條件中的 updated_on 介於某兩日之間）。
     """
     try:
         limit_normalized = max(1, min(100, limit))
@@ -38,6 +48,30 @@ def get_my_issues(limit: int = 20, include_closed: bool = False) -> str:
                     params["status_id"] = "open"
                 if project_id is not None:
                     params["project_id"] = project_id
+
+                # 依 updated_on 加上時間區間條件（對應 Redmine 查詢）
+                if updated_from or updated_to:
+                    date_values: list[str] = []
+                    if updated_from:
+                        date_values.append(updated_from)
+                    if updated_to:
+                        date_values.append(updated_to)
+
+                    if date_values:
+                        params["set_filter"] = 1
+                        params["f[]"] = ["updated_on"]
+
+                        if updated_from and updated_to:
+                            # updated_on 介於 updated_from 與 updated_to 之間
+                            params["op[updated_on]"] = "><"
+                        elif updated_from:
+                            # updated_on >= updated_from
+                            params["op[updated_on]"] = ">="
+                        else:
+                            # updated_on <= updated_to
+                            params["op[updated_on]"] = "<="
+
+                        params["v[updated_on][]"] = date_values
 
                 response = request_with_retry(
                     client,
